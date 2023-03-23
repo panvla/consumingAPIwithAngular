@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
+import { Coordinates } from 'src/app/interface/coordinates.interface';
 import { User } from 'src/app/interface/user.interface';
 import { UserService } from 'src/app/service/user.service';
+import * as Leaflet from 'leaflet';
 
 @Component({
   selector: 'app-userdetail',
@@ -12,6 +14,7 @@ export class UserdetailComponent implements OnInit {
   user: User;
   mode: 'edit' | 'locked' = 'locked';
   buttonText: 'Save Changes' | 'Edit' = 'Edit';
+  marker = new Leaflet.Icon({});
 
   constructor(
     private activatedRoute: ActivatedRoute,
@@ -23,6 +26,7 @@ export class UserdetailComponent implements OnInit {
       this.activatedRoute.snapshot.data['resolvedResponse'].results[0]
     );
     console.log(this.user);
+    this.loadMap(this.user.coordinate);
     // this.activatedRoute.paramMap.subscribe((params: ParamMap) => {
     //   console.log('User ID: ' + params.get('uuid'));
     //   this.userService
@@ -43,5 +47,32 @@ export class UserdetailComponent implements OnInit {
       // Logic to update the user on te back end
       console.log('Updating using on the back end');
     }
+  }
+
+  private loadMap(coordinate: Coordinates): void {
+    const map = Leaflet.map('map', {
+      center: [coordinate.latitude, coordinate.longitude],
+      zoom: 8,
+    });
+    const mainLayer = Leaflet.tileLayer(
+      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      {
+        tileSize: 512,
+        zoomOffset: -1,
+        minZoom: 1,
+        maxZoom: 30,
+        crossOrigin: true,
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }
+    );
+    mainLayer.addTo(map);
+    const marker = Leaflet.marker([coordinate.latitude, coordinate.longitude], {
+      icon: this.marker,
+    });
+    marker
+      .addTo(map)
+      .bindPopup(`${this.user.firstName}'s Location`)
+      .openPopup();
   }
 }
